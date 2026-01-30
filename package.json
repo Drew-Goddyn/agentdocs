@@ -1,0 +1,29 @@
+{
+  "name": "rails-agents-md",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "rails-agents-md": "./bin/rails-agents-md.js"
+  },
+  "files": [
+    "bin",
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts src/cli.ts --format esm --dts --out-dir dist",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "commander": "^12.1.0",
+    "prompts": "^2.4.2",
+    "picocolors": "^1.0.0",
+    "tar": "^7.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/prompts": "^2.4.9",
+    "typescript": "^5.4.0",
+    "vitest": "^2.0.0",
+    "tsup": "^8.0.0"
+  }
+}
