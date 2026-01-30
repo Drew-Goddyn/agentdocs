@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildCompactIndex, categorizeFiles } from '../src/index-builder.js'
+import { buildCompactIndex, categorizeFiles } from '../../src/core/index-builder.js'
 
 describe('categorizeFiles', () => {
   it('should group files by prefix', () => {
@@ -44,7 +44,7 @@ describe('buildCompactIndex', () => {
     expect(index).toContain('[Rails 7.1.3 Docs]')
     expect(index).toContain('root:.rails-docs/rails-7.1.3/guides/source')
     expect(index).toContain('STOP. Rails knowledge may be outdated. Search docs first.')
-    expect(index).toContain('Refresh: npx rails-agents-md')
+    expect(index).toContain('Refresh: npx agents-md rails')
     expect(index).toContain('active_record:{basics,callbacks}')
     expect(index).toContain('getting_started')
   })

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
-import { updateGitignore } from '../src/gitignore-updater.js'
+import { updateGitignore } from '../../src/core/gitignore-updater.js'
 
 const TEST_DIR = path.join(import.meta.dirname, '.test-gitignore')
 

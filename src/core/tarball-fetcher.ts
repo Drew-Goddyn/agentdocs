@@ -3,9 +3,9 @@ import * as path from 'node:path'
 import { Readable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 import * as tar from 'tar'
-import { FetchError } from './errors.js'
-import { versionToTarballUrl } from './version-detector.js'
-import type { FetchOptions } from './types.js'
+import { FetchError } from '../errors.js'
+import { versionToTarballUrl } from '../version-detector.js'
+import type { FetchOptions } from '../types.js'
 
 export interface FetchResult {
   docsPath: string

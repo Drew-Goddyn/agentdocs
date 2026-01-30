@@ -1,5 +1,5 @@
 import * as path from 'node:path'
-import type { IndexOptions } from './types.js'
+import type { SourceAdapter, IndexOptions } from '../types.js'
 
 const KNOWN_PREFIXES = [
   'active_record',
@@ -51,11 +51,33 @@ export function buildCompactIndex(options: IndexOptions): string {
     `[Rails ${version} Docs]`,
     `root:${docsPath}`,
     'STOP. Rails knowledge may be outdated. Search docs first.',
-    'Refresh: npx rails-agents-md',
+    'Refresh: npx agents-md rails',
   ]
 
   for (const [prefix, suffixes] of Object.entries(categories)) {
     if (prefix === '_uncategorized') {
+      parts.push(...suffixes)
+    } else {
+      parts.push(`${prefix}:{${suffixes.join(',')}}`)
+    }
+  }
+
+  return parts.join('|')
+}
+
+export function buildIndexWithAdapter(
+  adapter: SourceAdapter,
+  files: string[],
+  version: string,
+  docsPath: string
+): string {
+  const fileNames = files.map(f => path.basename(f))
+  const categories = adapter.categorizeFiles(fileNames)
+
+  const parts: string[] = [adapter.buildIndexHeader(version, docsPath)]
+
+  for (const [prefix, suffixes] of Object.entries(categories)) {
+    if (prefix === '_uncategorized' || prefix === '_root') {
       parts.push(...suffixes)
     } else {
       parts.push(`${prefix}:{${suffixes.join(',')}}`)

@@ -1,3 +1,13 @@
+export interface SourceAdapter {
+  name: string
+  markerPrefix: string
+  getTarballUrl: (version?: string) => string
+  getDocsPath: (extractedDir: string) => string
+  getOutputDir: (version?: string) => string
+  categorizeFiles: (fileNames: string[]) => Record<string, string[]>
+  buildIndexHeader: (version: string, docsPath: string) => string
+}
+
 export type RailsVersionResult =
   | { type: 'version'; version: string }
   | { type: 'git'; ref: string | null }

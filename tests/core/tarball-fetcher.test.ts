@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
-import { downloadAndExtract, collectMdFiles } from '../src/tarball-fetcher.js'
-import { FetchError } from '../src/errors.js'
+import { downloadAndExtract, collectMdFiles } from '../../src/core/tarball-fetcher.js'
+import { FetchError } from '../../src/errors.js'
 
-const FIXTURES_DIR = path.join(import.meta.dirname, 'fixtures')
+const FIXTURES_DIR = path.join(import.meta.dirname, '..', 'fixtures')
 const TEST_OUTPUT_DIR = path.join(import.meta.dirname, '.test-output')
 
 describe('downloadAndExtract', () => {

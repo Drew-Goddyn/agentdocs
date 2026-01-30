@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { BadInputError, FetchError, ParseError } from '../src/errors.js'
+import { BadInputError, FetchError, ParseError } from '../../src/errors.js'
 
 describe('BadInputError', () => {
   it('should have name BadInputError', () => {

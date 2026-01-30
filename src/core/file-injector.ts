@@ -1,18 +1,27 @@
 import * as fs from 'node:fs'
 import * as path from 'node:path'
-import type { InjectOptions } from './types.js'
+import type { InjectOptions } from '../types.js'
 
-export const MARKERS = {
-  START: '<!-- RAILS-AGENTS-MD-START -->',
-  END: '<!-- RAILS-AGENTS-MD-END -->',
+export function getMarkers(prefix: string) {
+  return {
+    START: `<!-- ${prefix}-START -->`,
+    END: `<!-- ${prefix}-END -->`,
+  }
 }
 
-export function injectIndex(options: InjectOptions): void {
-  const { targetFile, index } = options
+export const MARKERS = getMarkers('RAILS-AGENTS-MD')
 
-  const wrappedIndex = `${MARKERS.START}
+export function injectIndex(options: InjectOptions): void {
+  injectIndexWithMarkers({ ...options, markerPrefix: 'RAILS-AGENTS-MD' })
+}
+
+export function injectIndexWithMarkers(options: InjectOptions & { markerPrefix: string }): void {
+  const { targetFile, index, markerPrefix } = options
+  const markers = getMarkers(markerPrefix)
+
+  const wrappedIndex = `${markers.START}
 ${index}
-${MARKERS.END}`
+${markers.END}`
 
   if (!fs.existsSync(targetFile)) {
     fs.mkdirSync(path.dirname(targetFile), { recursive: true })
@@ -23,7 +32,7 @@ ${MARKERS.END}`
   const content = fs.readFileSync(targetFile, 'utf-8')
 
   const markerPattern = new RegExp(
-    `${escapeRegex(MARKERS.START)}[\\s\\S]*?${escapeRegex(MARKERS.END)}`
+    `${escapeRegex(markers.START)}[\\s\\S]*?${escapeRegex(markers.END)}`
   )
 
   if (markerPattern.test(content)) {

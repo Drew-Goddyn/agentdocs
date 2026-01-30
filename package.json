@@ -1,9 +1,9 @@
 {
-  "name": "rails-agents-md",
-  "version": "0.1.0",
+  "name": "agents-md",
+  "version": "0.2.0",
   "type": "module",
   "bin": {
-    "rails-agents-md": "./bin/rails-agents-md.js"
+    "agents-md": "./bin/agents-md.js"
   },
   "files": [
     "bin",

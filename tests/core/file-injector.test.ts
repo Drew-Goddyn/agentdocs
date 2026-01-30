@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
-import { injectIndex, findTargetFile, MARKERS } from '../src/file-injector.js'
+import { injectIndex, findTargetFile, MARKERS } from '../../src/core/file-injector.js'
 
 const TEST_DIR = path.join(import.meta.dirname, '.test-inject')
 
