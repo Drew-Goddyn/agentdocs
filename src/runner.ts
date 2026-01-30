@@ -29,21 +29,20 @@ export async function runSource(adapter: SourceAdapter, options: RunnerOptions):
 
   if (isCached && !options.force) {
     console.log(pc.green(`✓ ${adapter.name} docs already cached at ${outputDir}`))
-    return
-  }
-
-  if (!options.yes && !isCached) {
-    const confirmed = await promptConfirm(`Download ${adapter.name} docs?`)
-    if (!confirmed) {
-      console.log(pc.dim('Cancelled.'))
-      process.exit(0)
+  } else {
+    if (!options.yes && !isCached) {
+      const confirmed = await promptConfirm(`Download ${adapter.name} docs?`)
+      if (!confirmed) {
+        console.log(pc.dim('Cancelled.'))
+        process.exit(0)
+      }
     }
-  }
 
-  const fetchResult = await downloadAndExtractGeneric(adapter, version, outputDir, options.force)
+    await downloadAndExtractGeneric(adapter, version, outputDir, options.force)
+  }
 
   console.log(pc.dim('Building index...'))
-  const docsPath = adapter.getDocsPath(fetchResult.extractedDir)
+  const docsPath = adapter.getDocsPath(outputDir)
   const mdFiles = collectMdFilesGeneric(docsPath)
   const relativePath = path.relative(cwd, docsPath)
 
