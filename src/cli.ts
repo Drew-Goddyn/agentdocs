@@ -3,10 +3,8 @@ import { Command } from 'commander'
 import pc from 'picocolors'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
-import { railsAdapter } from './sources/rails.js'
-import { turboAdapter } from './sources/turbo.js'
 import { stimulusAdapter } from './sources/stimulus.js'
-import { runSource, runRailsGuides } from './runner.js'
+import { runSource, runRailsGuides, runTurboDocs } from './runner.js'
 import { parseRailsVersion, findGemfileLock } from './version-detector.js'
 import { promptVersion } from './core/prompts.js'
 import { BadInputError, FetchError } from './errors.js'
@@ -78,13 +76,13 @@ program
 
 program
   .command('turbo')
-  .description('Fetch Turbo documentation')
+  .description('Fetch Turbo documentation via sparse-checkout')
   .option('-o, --output <file>', 'Output file (default: auto-detect CLAUDE.md or AGENTS.md)')
   .option('-y, --yes', 'Skip confirmation prompts')
   .option('-f, --force', 'Force re-download even if cached')
   .action(async (opts) => {
     try {
-      await runSource(turboAdapter, {
+      await runTurboDocs({
         output: opts.output,
         yes: opts.yes,
         force: opts.force,

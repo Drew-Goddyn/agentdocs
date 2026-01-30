@@ -10,14 +10,14 @@ describe('turboAdapter', () => {
     expect(turboAdapter.markerPrefix).toBe('TURBO-AGENTS-MD')
   })
 
-  it('should generate correct tarball URL', () => {
+  it('should return git URL', () => {
     const url = turboAdapter.getTarballUrl()
-    expect(url).toBe('https://github.com/hotwired/turbo-site/archive/refs/heads/main.tar.gz')
+    expect(url).toBe('https://github.com/hotwired/turbo-site.git')
   })
 
-  it('should return correct docs path', () => {
-    const path = turboAdapter.getDocsPath('/tmp/turbo-site-main')
-    expect(path).toBe('/tmp/turbo-site-main/_source')
+  it('should return docs path as the output dir', () => {
+    const path = turboAdapter.getDocsPath('/tmp/.turbo-docs')
+    expect(path).toBe('/tmp/.turbo-docs')
   })
 
   it('should return correct output directory', () => {

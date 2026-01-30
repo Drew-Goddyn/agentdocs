@@ -11,6 +11,7 @@ import { injectIndexWithMarkers, findTargetFile } from './core/file-injector.js'
 import { FetchError } from './errors.js'
 import { promptConfirm } from './core/prompts.js'
 import { railsAdapter } from './sources/rails.js'
+import { turboAdapter } from './sources/turbo.js'
 
 export interface RunnerOptions {
   version?: string
@@ -66,31 +67,55 @@ export async function runSource(adapter: SourceAdapter, options: RunnerOptions):
   console.log(pc.green(`\n✓ ${adapter.name} docs ready!`))
 }
 
-async function cloneGuidesFolder(tag: string, destDir: string): Promise<void> {
+interface SparseCloneOptions {
+  repoUrl: string
+  branch?: string
+  sparseFolder: string
+  destDir: string
+  fileFilter?: (src: string) => boolean
+  errorContext: string
+}
+
+async function sparseClone(options: SparseCloneOptions): Promise<void> {
+  const { repoUrl, branch, sparseFolder, destDir, fileFilter, errorContext } = options
   const tempDir = path.join(path.dirname(destDir), `.temp-clone-${Date.now()}`)
   fs.mkdirSync(tempDir, { recursive: true })
 
   try {
-    cloneRailsRepo(tag, tempDir)
-    execSync('git sparse-checkout set guides/source', { cwd: tempDir, stdio: 'pipe' })
+    const branchArg = branch ? ` --branch ${branch}` : ''
+    try {
+      execSync(
+        `git clone --depth 1 --filter=blob:none --sparse${branchArg} ${repoUrl} .`,
+        { cwd: tempDir, stdio: 'pipe' }
+      )
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      if (message.includes('not found') || message.includes('did not match')) {
+        throw new FetchError(`${errorContext} not found. Check if the branch/tag exists.`, 404)
+      }
+      throw error
+    }
 
-    const sourceDir = path.join(tempDir, 'guides', 'source')
+    execSync(`git sparse-checkout set ${sparseFolder}`, { cwd: tempDir, stdio: 'pipe' })
+
+    const sourceDir = path.join(tempDir, sparseFolder)
     if (!fs.existsSync(sourceDir)) {
-      throw new FetchError('guides/source folder not found in Rails repository', 404)
+      throw new FetchError(`${sparseFolder} folder not found in repository`, 404)
     }
 
     if (fs.existsSync(destDir)) {
       fs.rmSync(destDir, { recursive: true })
     }
     fs.mkdirSync(destDir, { recursive: true })
+
+    const defaultFilter = (src: string): boolean => {
+      if (fs.statSync(src).isDirectory()) return true
+      return src.endsWith('.md')
+    }
+
     fs.cpSync(sourceDir, destDir, {
       recursive: true,
-      filter: (src) => {
-        if (fs.statSync(src).isDirectory()) {
-          return !src.endsWith('/epub')
-        }
-        return src.endsWith('.md')
-      },
+      filter: fileFilter ?? defaultFilter,
     })
   } finally {
     if (fs.existsSync(tempDir)) {
@@ -99,22 +124,29 @@ async function cloneGuidesFolder(tag: string, destDir: string): Promise<void> {
   }
 }
 
-function cloneRailsRepo(tag: string, tempDir: string): void {
-  try {
-    execSync(
-      `git clone --depth 1 --filter=blob:none --sparse --branch v${tag} https://github.com/rails/rails.git .`,
-      { cwd: tempDir, stdio: 'pipe' }
-    )
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
-    if (message.includes('not found') || message.includes('did not match')) {
-      throw new FetchError(
-        `Could not find Rails version v${tag}. This version may not exist as a git tag.`,
-        404
-      )
-    }
-    throw error
-  }
+async function cloneGuidesFolder(tag: string, destDir: string): Promise<void> {
+  await sparseClone({
+    repoUrl: 'https://github.com/rails/rails.git',
+    branch: `v${tag}`,
+    sparseFolder: 'guides/source',
+    destDir,
+    errorContext: `Rails version v${tag}`,
+    fileFilter: (src) => {
+      if (fs.statSync(src).isDirectory()) {
+        return !src.endsWith('/epub')
+      }
+      return src.endsWith('.md')
+    },
+  })
+}
+
+async function cloneTurboDocs(destDir: string): Promise<void> {
+  await sparseClone({
+    repoUrl: 'https://github.com/hotwired/turbo-site.git',
+    sparseFolder: '_source',
+    destDir,
+    errorContext: 'Turbo docs',
+  })
 }
 
 export async function runRailsGuides(options: RunnerOptions): Promise<void> {
@@ -167,6 +199,57 @@ export async function runRailsGuides(options: RunnerOptions): Promise<void> {
   console.log(pc.green('✓ Updated .gitignore'))
 
   console.log(pc.green(`\n✓ Rails guides ready!`))
+}
+
+export async function runTurboDocs(options: RunnerOptions): Promise<void> {
+  const cwd = process.cwd()
+
+  console.log(pc.blue('Fetching Turbo documentation...'))
+
+  const outputDir = path.join(cwd, '.turbo-docs')
+  const isCached = fs.existsSync(outputDir)
+
+  if (isCached && !options.force) {
+    console.log(pc.green(`✓ Turbo docs already cached at ${outputDir}`))
+  } else {
+    if (!options.yes && !isCached) {
+      const confirmed = await promptConfirm('Download Turbo docs?')
+      if (!confirmed) {
+        console.log(pc.dim('Cancelled.'))
+        process.exit(0)
+      }
+    }
+
+    if (options.force && fs.existsSync(outputDir)) {
+      fs.rmSync(outputDir, { recursive: true })
+    }
+
+    console.log(pc.dim('Cloning hotwired/turbo-site (sparse-checkout _source)...'))
+    await cloneTurboDocs(outputDir)
+    console.log(pc.green('✓ Downloaded docs'))
+  }
+
+  console.log(pc.dim('Building index...'))
+  const mdFiles = collectMdFilesGeneric(outputDir)
+  const relativePath = path.relative(cwd, outputDir)
+
+  const index = buildIndexWithAdapter(turboAdapter, mdFiles, 'main', relativePath)
+
+  const targetFile = options.output
+    ? path.resolve(cwd, options.output)
+    : findTargetFile(cwd)
+
+  injectIndexWithMarkers({
+    targetFile,
+    index,
+    markerPrefix: turboAdapter.markerPrefix,
+  })
+  console.log(pc.green(`✓ Updated ${path.relative(cwd, targetFile)}`))
+
+  updateGitignore(cwd, '.turbo-docs/')
+  console.log(pc.green('✓ Updated .gitignore'))
+
+  console.log(pc.green('\n✓ Turbo docs ready!'))
 }
 
 async function downloadAndExtractGeneric(
