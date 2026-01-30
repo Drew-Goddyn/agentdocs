@@ -55,7 +55,7 @@ describe('E2E: Multi-source workflow', () => {
     const railsMarkers = getMarkers(railsAdapter.markerPrefix)
     expect(content).toContain(railsMarkers.START)
     expect(content).toContain(railsMarkers.END)
-    expect(content).toContain('[Rails 7.1.3 Docs]')
+    expect(content).toContain('[Rails 7.1.3 Guides]')
 
     const turboMarkers = getMarkers(turboAdapter.markerPrefix)
     expect(content).toContain(turboMarkers.START)
@@ -97,8 +97,8 @@ describe('E2E: Multi-source workflow', () => {
 
     const content = fs.readFileSync(claudeMd, 'utf-8')
 
-    expect(content).toContain('[Rails 8.0.0 Docs]')
-    expect(content).not.toContain('[Rails 7.1.3 Docs]')
+    expect(content).toContain('[Rails 8.0.0 Guides]')
+    expect(content).not.toContain('[Rails 7.1.3 Guides]')
 
     expect(content).toContain('[Turbo Docs]')
   })

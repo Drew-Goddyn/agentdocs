@@ -1,15 +1,16 @@
 import * as fs from 'node:fs'
 import * as path from 'node:path'
-import pc from 'picocolors'
+import { execSync } from 'node:child_process'
 import { Readable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 import * as tar from 'tar'
+import pc from 'picocolors'
 import type { SourceAdapter } from './types.js'
 import { buildIndexWithAdapter } from './core/index-builder.js'
 import { injectIndexWithMarkers, findTargetFile } from './core/file-injector.js'
-import { updateGitignore } from './core/gitignore-updater.js'
 import { FetchError } from './errors.js'
 import { promptConfirm } from './core/prompts.js'
+import { railsAdapter } from './sources/rails.js'
 
 export interface RunnerOptions {
   version?: string
@@ -59,15 +60,105 @@ export async function runSource(adapter: SourceAdapter, options: RunnerOptions):
   })
   console.log(pc.green(`✓ Updated ${path.relative(cwd, targetFile)}`))
 
-  updateGitignoreForAdapter(cwd, adapter)
+  updateGitignore(cwd, adapter.getOutputDir() + '/')
   console.log(pc.green('✓ Updated .gitignore'))
 
   console.log(pc.green(`\n✓ ${adapter.name} docs ready!`))
 }
 
-interface FetchResult {
-  extractedDir: string
-  cached: boolean
+async function cloneGuidesFolder(tag: string, destDir: string): Promise<void> {
+  const tempDir = path.join(path.dirname(destDir), `.temp-clone-${Date.now()}`)
+  fs.mkdirSync(tempDir, { recursive: true })
+
+  try {
+    cloneRailsRepo(tag, tempDir)
+    execSync('git sparse-checkout set guides/source', { cwd: tempDir, stdio: 'pipe' })
+
+    const sourceDir = path.join(tempDir, 'guides', 'source')
+    if (!fs.existsSync(sourceDir)) {
+      throw new FetchError('guides/source folder not found in Rails repository', 404)
+    }
+
+    if (fs.existsSync(destDir)) {
+      fs.rmSync(destDir, { recursive: true })
+    }
+    fs.mkdirSync(destDir, { recursive: true })
+    fs.cpSync(sourceDir, destDir, { recursive: true })
+  } finally {
+    if (fs.existsSync(tempDir)) {
+      fs.rmSync(tempDir, { recursive: true })
+    }
+  }
+}
+
+function cloneRailsRepo(tag: string, tempDir: string): void {
+  try {
+    execSync(
+      `git clone --depth 1 --filter=blob:none --sparse --branch v${tag} https://github.com/rails/rails.git .`,
+      { cwd: tempDir, stdio: 'pipe' }
+    )
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    if (message.includes('not found') || message.includes('did not match')) {
+      throw new FetchError(
+        `Could not find Rails version v${tag}. This version may not exist as a git tag.`,
+        404
+      )
+    }
+    throw error
+  }
+}
+
+export async function runRailsGuides(options: RunnerOptions): Promise<void> {
+  const cwd = process.cwd()
+  const version = options.version || '7.1.0'
+
+  console.log(pc.blue(`Fetching Rails ${version} guides...`))
+
+  const outputDir = path.join(cwd, `.rails-docs/${version}`)
+  const isCached = fs.existsSync(outputDir)
+
+  if (isCached && !options.force) {
+    console.log(pc.green(`✓ Rails guides already cached at ${outputDir}`))
+  } else {
+    if (!options.yes && !isCached) {
+      const confirmed = await promptConfirm(`Download Rails ${version} guides?`)
+      if (!confirmed) {
+        console.log(pc.dim('Cancelled.'))
+        process.exit(0)
+      }
+    }
+
+    if (options.force && fs.existsSync(outputDir)) {
+      fs.rmSync(outputDir, { recursive: true })
+    }
+
+    console.log(pc.dim(`Cloning rails/rails (sparse-checkout guides/source)...`))
+    await cloneGuidesFolder(version, outputDir)
+    console.log(pc.green(`✓ Downloaded guides`))
+  }
+
+  console.log(pc.dim('Building index...'))
+  const mdFiles = collectMdFilesGeneric(outputDir)
+  const relativePath = path.relative(cwd, outputDir)
+
+  const index = buildIndexWithAdapter(railsAdapter, mdFiles, version, relativePath)
+
+  const targetFile = options.output
+    ? path.resolve(cwd, options.output)
+    : findTargetFile(cwd)
+
+  injectIndexWithMarkers({
+    targetFile,
+    index,
+    markerPrefix: railsAdapter.markerPrefix,
+  })
+  console.log(pc.green(`✓ Updated ${path.relative(cwd, targetFile)}`))
+
+  updateGitignore(cwd, '.rails-docs/')
+  console.log(pc.green('✓ Updated .gitignore'))
+
+  console.log(pc.green(`\n✓ Rails guides ready!`))
 }
 
 async function downloadAndExtractGeneric(
@@ -75,7 +166,7 @@ async function downloadAndExtractGeneric(
   version: string,
   outputDir: string,
   force?: boolean
-): Promise<FetchResult> {
+): Promise<void> {
   if (force && fs.existsSync(outputDir)) {
     fs.rmSync(outputDir, { recursive: true })
   }
@@ -103,7 +194,10 @@ async function downloadAndExtractGeneric(
   try {
     await pipeline(
       Readable.from(buffer),
-      tar.extract({ cwd: tempDir })
+      tar.extract({
+        cwd: tempDir,
+        filter: adapter.getDocsFilter,
+      })
     )
 
     const extractedDirs = fs.readdirSync(tempDir)
@@ -119,8 +213,6 @@ async function downloadAndExtractGeneric(
         )
       }
     }
-
-    return { extractedDir: outputDir, cached: false }
   } finally {
     fs.rmSync(tempDir, { recursive: true, force: true })
   }
@@ -148,22 +240,19 @@ function collectMdFilesGeneric(docsPath: string): string[] {
   return files
 }
 
-function updateGitignoreForAdapter(projectDir: string, adapter: SourceAdapter): void {
+function updateGitignore(projectDir: string, entry: string): void {
   const gitignorePath = path.join(projectDir, '.gitignore')
-  const entry = adapter.getOutputDir().replace(/^\./, '') + '/'
 
   if (!fs.existsSync(gitignorePath)) {
-    fs.writeFileSync(gitignorePath, '.' + entry + '\n')
+    fs.writeFileSync(gitignorePath, entry + '\n')
     return
   }
 
   const content = fs.readFileSync(gitignorePath, 'utf-8')
-  const fullEntry = '.' + entry
 
-  if (content.includes(fullEntry)) {
+  if (content.includes(entry)) {
     return
   }
 
-  const newContent = content.trimEnd() + '\n' + fullEntry + '\n'
-  fs.writeFileSync(gitignorePath, newContent)
+  fs.writeFileSync(gitignorePath, content.trimEnd() + '\n' + entry + '\n')
 }

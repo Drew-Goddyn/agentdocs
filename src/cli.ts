@@ -6,7 +6,7 @@ import * as path from 'node:path'
 import { railsAdapter } from './sources/rails.js'
 import { turboAdapter } from './sources/turbo.js'
 import { stimulusAdapter } from './sources/stimulus.js'
-import { runSource } from './runner.js'
+import { runSource, runRailsGuides } from './runner.js'
 import { parseRailsVersion, findGemfileLock } from './version-detector.js'
 import { promptVersion } from './core/prompts.js'
 import { BadInputError, FetchError } from './errors.js'
@@ -20,7 +20,7 @@ program
 
 program
   .command('rails')
-  .description('Fetch Rails documentation')
+  .description('Fetch Rails guides documentation via sparse-checkout')
   .option('-r, --rails-version <version>', 'Rails version (auto-detected from Gemfile.lock)')
   .option('-o, --output <file>', 'Output file (default: auto-detect CLAUDE.md or AGENTS.md)')
   .option('-y, --yes', 'Skip confirmation prompts')
@@ -65,7 +65,7 @@ program
         }
       }
 
-      await runSource(railsAdapter, {
+      await runRailsGuides({
         version,
         output: opts.output,
         yes: opts.yes,
