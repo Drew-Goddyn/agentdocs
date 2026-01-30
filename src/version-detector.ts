@@ -11,7 +11,7 @@ export function parseRailsVersion(content: string): RailsVersionResult {
     return { type: 'git', ref: branch }
   }
 
-  const railsPattern = /^\s+rails\s+\(([^)]+)\)/m
+  const railsPattern = /^\s{4}rails\s+\((\d[^)]+)\)/m
   const match = content.match(railsPattern)
 
   if (!match) {
