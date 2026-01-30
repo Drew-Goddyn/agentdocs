@@ -108,6 +108,40 @@ describe('downloadAndExtract', () => {
   })
 })
 
+describe('tarball filtering', () => {
+  beforeEach(() => {
+    fs.rmSync(TEST_OUTPUT_DIR, { recursive: true, force: true })
+    fs.mkdirSync(TEST_OUTPUT_DIR, { recursive: true })
+  })
+
+  afterEach(() => {
+    fs.rmSync(TEST_OUTPUT_DIR, { recursive: true, force: true })
+    vi.restoreAllMocks()
+  })
+
+  it('should only extract docs path, not framework source code', async () => {
+    const fixtureBuffer = fs.readFileSync(path.join(FIXTURES_DIR, 'mini-rails-full.tar.gz'))
+
+    vi.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      status: 200,
+      arrayBuffer: async () => fixtureBuffer.buffer.slice(fixtureBuffer.byteOffset, fixtureBuffer.byteOffset + fixtureBuffer.byteLength),
+    } as Response)
+
+    const result = await downloadAndExtract({
+      version: '7.1.0',
+      outputDir: TEST_OUTPUT_DIR,
+    })
+
+    expect(fs.existsSync(path.join(result.docsPath, 'guides', 'source', 'getting_started.md'))).toBe(true)
+    expect(fs.existsSync(path.join(result.docsPath, 'guides', 'source', 'active_record_basics.md'))).toBe(true)
+
+    expect(fs.existsSync(path.join(result.docsPath, 'activerecord'))).toBe(false)
+    expect(fs.existsSync(path.join(result.docsPath, 'actionpack'))).toBe(false)
+    expect(fs.existsSync(path.join(result.docsPath, 'README.md'))).toBe(false)
+  })
+})
+
 describe('collectMdFiles', () => {
   beforeEach(() => {
     fs.rmSync(TEST_OUTPUT_DIR, { recursive: true, force: true })

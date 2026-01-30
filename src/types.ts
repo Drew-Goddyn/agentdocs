@@ -6,6 +6,7 @@ export interface SourceAdapter {
   getOutputDir: (version?: string) => string
   categorizeFiles: (fileNames: string[]) => Record<string, string[]>
   buildIndexHeader: (version: string, docsPath: string) => string
+  getDocsFilter?: (entryPath: string) => boolean
 }
 
 export type RailsVersionResult =

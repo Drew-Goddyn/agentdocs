@@ -17,4 +17,9 @@ export const stimulusAdapter: SourceAdapter = {
 
   buildIndexHeader: (_version, docsPath) =>
     `[Stimulus Docs]|root:${docsPath}|Refresh: npx agentdocs stimulus`,
+
+  getDocsFilter: (entryPath) => {
+    const parts = entryPath.split('/')
+    return parts.length <= 2 || entryPath.includes('/_source/')
+  },
 }
