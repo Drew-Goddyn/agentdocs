@@ -117,6 +117,8 @@ async function sparseClone(options: SparseCloneOptions): Promise<void> {
       recursive: true,
       filter: fileFilter ?? defaultFilter,
     })
+
+    removeEmptyDirs(destDir)
   } finally {
     if (fs.existsSync(tempDir)) {
       fs.rmSync(tempDir, { recursive: true })
@@ -307,6 +309,27 @@ async function downloadAndExtractGeneric(
   } finally {
     fs.rmSync(tempDir, { recursive: true, force: true })
   }
+}
+
+function removeEmptyDirs(dir: string): boolean {
+  const entries = fs.readdirSync(dir, { withFileTypes: true })
+  let hasContent = false
+
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name)
+    if (entry.isDirectory()) {
+      const subHasContent = removeEmptyDirs(fullPath)
+      if (subHasContent) hasContent = true
+    } else {
+      hasContent = true
+    }
+  }
+
+  if (!hasContent) {
+    fs.rmdirSync(dir)
+  }
+
+  return hasContent
 }
 
 function collectMdFilesGeneric(docsPath: string): string[] {
