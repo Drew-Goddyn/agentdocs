@@ -23,7 +23,7 @@ npm test -- <file>     # Run specific test file
 ### Core Flow
 
 1. **CLI** (`src/cli.ts`) - Commander.js subcommands: `rails`, `turbo`, `stimulus`
-2. **Runner** (`src/runner.ts`) - Orchestrates: fetch tarball → extract → build index → inject into target file
+2. **Runner** (`src/runner.ts`) - Orchestrates: sparse-checkout clone → build index → inject into target file
 3. **Source Adapters** (`src/sources/`) - Define repo URLs, doc paths, and categorization logic per source
 
 ### Key Abstraction: SourceAdapter
@@ -34,7 +34,7 @@ All documentation sources implement this interface (`src/types.ts`):
 interface SourceAdapter {
   name: string
   markerPrefix: string                    // e.g., 'RAILS-AGENTS-MD'
-  getTarballUrl: (version?) => string     // GitHub tarball URL
+  getTarballUrl: (version?) => string     // GitHub URL (tarball or git repo)
   getDocsPath: (extractedDir) => string   // Path to docs within extracted tarball
   getOutputDir: (version?) => string      // Local cache directory
   categorizeFiles: (files) => Record<string, string[]>  // Group files for compact index
