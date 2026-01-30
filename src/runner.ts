@@ -83,7 +83,15 @@ async function cloneGuidesFolder(tag: string, destDir: string): Promise<void> {
       fs.rmSync(destDir, { recursive: true })
     }
     fs.mkdirSync(destDir, { recursive: true })
-    fs.cpSync(sourceDir, destDir, { recursive: true })
+    fs.cpSync(sourceDir, destDir, {
+      recursive: true,
+      filter: (src) => {
+        if (fs.statSync(src).isDirectory()) {
+          return !src.endsWith('/epub')
+        }
+        return src.endsWith('.md')
+      },
+    })
   } finally {
     if (fs.existsSync(tempDir)) {
       fs.rmSync(tempDir, { recursive: true })
