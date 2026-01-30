@@ -16,5 +16,5 @@ export const turboAdapter: SourceAdapter = {
   categorizeFiles: categorizeByDirectory,
 
   buildIndexHeader: (_version, docsPath) =>
-    `[Turbo Docs]|root:${docsPath}|Refresh: npx agents-md turbo`,
+    `[Turbo Docs]|root:${docsPath}|Refresh: npx agentdocs turbo`,
 }

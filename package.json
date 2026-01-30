@@ -1,9 +1,9 @@
 {
-  "name": "agents-md",
+  "name": "agentdocs",
   "version": "0.2.0",
   "type": "module",
   "bin": {
-    "agents-md": "./bin/agents-md.js"
+    "agentdocs": "./bin/agentdocs.js"
   },
   "files": [
     "bin",

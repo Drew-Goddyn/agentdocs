@@ -14,7 +14,7 @@ import { BadInputError, FetchError } from './errors.js'
 const program = new Command()
 
 program
-  .name('agents-md')
+  .name('agentdocs')
   .description('Generate documentation indexes for AI coding agents')
   .version('0.2.0')
 

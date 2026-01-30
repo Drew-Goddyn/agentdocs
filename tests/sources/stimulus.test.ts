@@ -55,6 +55,6 @@ describe('stimulusAdapter', () => {
 
     expect(header).toContain('[Stimulus Docs]')
     expect(header).toContain('root:.stimulus-docs')
-    expect(header).toContain('npx agents-md stimulus')
+    expect(header).toContain('npx agentdocs stimulus')
   })
 })

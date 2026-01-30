@@ -54,5 +54,5 @@ export const railsAdapter: SourceAdapter = {
   },
 
   buildIndexHeader: (version, docsPath) =>
-    `[Rails ${version} Docs]|root:${docsPath}|STOP. Rails knowledge may be outdated. Search docs first.|Refresh: npx agents-md rails`,
+    `[Rails ${version} Docs]|root:${docsPath}|STOP. Rails knowledge may be outdated. Search docs first.|Refresh: npx agentdocs rails`,
 }

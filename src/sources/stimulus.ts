@@ -16,5 +16,5 @@ export const stimulusAdapter: SourceAdapter = {
   categorizeFiles: categorizeByDirectory,
 
   buildIndexHeader: (_version, docsPath) =>
-    `[Stimulus Docs]|root:${docsPath}|Refresh: npx agents-md stimulus`,
+    `[Stimulus Docs]|root:${docsPath}|Refresh: npx agentdocs stimulus`,
 }

@@ -58,6 +58,6 @@ describe('turboAdapter', () => {
 
     expect(header).toContain('[Turbo Docs]')
     expect(header).toContain('root:.turbo-docs')
-    expect(header).toContain('npx agents-md turbo')
+    expect(header).toContain('npx agentdocs turbo')
   })
 })

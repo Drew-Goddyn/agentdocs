@@ -76,6 +76,6 @@ describe('railsAdapter', () => {
     expect(header).toContain('[Rails 7.1.3 Docs]')
     expect(header).toContain('root:.rails-docs/rails-7.1.3/guides/source')
     expect(header).toContain('STOP. Rails knowledge may be outdated.')
-    expect(header).toContain('npx agents-md rails')
+    expect(header).toContain('npx agentdocs rails')
   })
 })

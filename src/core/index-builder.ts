@@ -51,7 +51,7 @@ export function buildCompactIndex(options: IndexOptions): string {
     `[Rails ${version} Docs]`,
     `root:${docsPath}`,
     'STOP. Rails knowledge may be outdated. Search docs first.',
-    'Refresh: npx agents-md rails',
+    'Refresh: npx agentdocs rails',
   ]
 
   for (const [prefix, suffixes] of Object.entries(categories)) {

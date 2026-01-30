@@ -44,7 +44,7 @@ describe('buildCompactIndex', () => {
     expect(index).toContain('[Rails 7.1.3 Docs]')
     expect(index).toContain('root:.rails-docs/rails-7.1.3/guides/source')
     expect(index).toContain('STOP. Rails knowledge may be outdated. Search docs first.')
-    expect(index).toContain('Refresh: npx agents-md rails')
+    expect(index).toContain('Refresh: npx agentdocs rails')
     expect(index).toContain('active_record:{basics,callbacks}')
     expect(index).toContain('getting_started')
   })
