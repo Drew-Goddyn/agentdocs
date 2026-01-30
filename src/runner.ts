@@ -12,6 +12,7 @@ import { FetchError } from './errors.js'
 import { promptConfirm } from './core/prompts.js'
 import { railsAdapter } from './sources/rails.js'
 import { turboAdapter } from './sources/turbo.js'
+import { stimulusAdapter } from './sources/stimulus.js'
 
 export interface RunnerOptions {
   version?: string
@@ -142,12 +143,34 @@ async function cloneGuidesFolder(tag: string, destDir: string): Promise<void> {
   })
 }
 
-async function cloneTurboDocs(destDir: string): Promise<void> {
+interface SparseCloneConfig {
+  repoUrl: string
+  sparseFolder: string
+  errorContext: string
+  branch?: string
+  fileFilter?: (src: string) => boolean
+}
+
+const turboCloneConfig: SparseCloneConfig = {
+  repoUrl: 'https://github.com/hotwired/turbo-site.git',
+  sparseFolder: '_source',
+  errorContext: 'Turbo docs',
+}
+
+const stimulusCloneConfig: SparseCloneConfig = {
+  repoUrl: 'https://github.com/hotwired/stimulus.git',
+  sparseFolder: 'docs',
+  errorContext: 'Stimulus docs',
+}
+
+async function cloneWithConfig(config: SparseCloneConfig, destDir: string): Promise<void> {
   await sparseClone({
-    repoUrl: 'https://github.com/hotwired/turbo-site.git',
-    sparseFolder: '_source',
+    repoUrl: config.repoUrl,
+    branch: config.branch,
+    sparseFolder: config.sparseFolder,
     destDir,
-    errorContext: 'Turbo docs',
+    errorContext: config.errorContext,
+    fileFilter: config.fileFilter,
   })
 }
 
@@ -203,19 +226,23 @@ export async function runRailsGuides(options: RunnerOptions): Promise<void> {
   console.log(pc.green(`\n✓ Rails guides ready!`))
 }
 
-export async function runTurboDocs(options: RunnerOptions): Promise<void> {
+async function runSparseCheckoutDocs(
+  adapter: SourceAdapter,
+  cloneConfig: SparseCloneConfig,
+  options: RunnerOptions
+): Promise<void> {
   const cwd = process.cwd()
+  const outputDir = path.join(cwd, adapter.getOutputDir())
 
-  console.log(pc.blue('Fetching Turbo documentation...'))
+  console.log(pc.blue(`Fetching ${adapter.name} documentation...`))
 
-  const outputDir = path.join(cwd, '.turbo-docs')
   const isCached = fs.existsSync(outputDir)
 
   if (isCached && !options.force) {
-    console.log(pc.green(`✓ Turbo docs already cached at ${outputDir}`))
+    console.log(pc.green(`✓ ${adapter.name} docs already cached at ${outputDir}`))
   } else {
     if (!options.yes && !isCached) {
-      const confirmed = await promptConfirm('Download Turbo docs?')
+      const confirmed = await promptConfirm(`Download ${adapter.name} docs?`)
       if (!confirmed) {
         console.log(pc.dim('Cancelled.'))
         process.exit(0)
@@ -226,8 +253,8 @@ export async function runTurboDocs(options: RunnerOptions): Promise<void> {
       fs.rmSync(outputDir, { recursive: true })
     }
 
-    console.log(pc.dim('Cloning hotwired/turbo-site (sparse-checkout _source)...'))
-    await cloneTurboDocs(outputDir)
+    console.log(pc.dim(`Cloning ${cloneConfig.repoUrl.replace('https://github.com/', '')} (sparse-checkout ${cloneConfig.sparseFolder})...`))
+    await cloneWithConfig(cloneConfig, outputDir)
     console.log(pc.green('✓ Downloaded docs'))
   }
 
@@ -235,7 +262,7 @@ export async function runTurboDocs(options: RunnerOptions): Promise<void> {
   const mdFiles = collectMdFilesGeneric(outputDir)
   const relativePath = path.relative(cwd, outputDir)
 
-  const index = buildIndexWithAdapter(turboAdapter, mdFiles, 'main', relativePath)
+  const index = buildIndexWithAdapter(adapter, mdFiles, 'main', relativePath)
 
   const targetFile = options.output
     ? path.resolve(cwd, options.output)
@@ -244,14 +271,22 @@ export async function runTurboDocs(options: RunnerOptions): Promise<void> {
   injectIndexWithMarkers({
     targetFile,
     index,
-    markerPrefix: turboAdapter.markerPrefix,
+    markerPrefix: adapter.markerPrefix,
   })
   console.log(pc.green(`✓ Updated ${path.relative(cwd, targetFile)}`))
 
-  updateGitignore(cwd, '.turbo-docs/')
+  updateGitignore(cwd, adapter.getOutputDir() + '/')
   console.log(pc.green('✓ Updated .gitignore'))
 
-  console.log(pc.green('\n✓ Turbo docs ready!'))
+  console.log(pc.green(`\n✓ ${adapter.name} docs ready!`))
+}
+
+export function runTurboDocs(options: RunnerOptions): Promise<void> {
+  return runSparseCheckoutDocs(turboAdapter, turboCloneConfig, options)
+}
+
+export function runStimulusDocs(options: RunnerOptions): Promise<void> {
+  return runSparseCheckoutDocs(stimulusAdapter, stimulusCloneConfig, options)
 }
 
 async function downloadAndExtractGeneric(

@@ -10,14 +10,14 @@ describe('stimulusAdapter', () => {
     expect(stimulusAdapter.markerPrefix).toBe('STIMULUS-AGENTS-MD')
   })
 
-  it('should generate correct tarball URL', () => {
+  it('should return git URL', () => {
     const url = stimulusAdapter.getTarballUrl()
-    expect(url).toBe('https://github.com/hotwired/stimulus-site/archive/refs/heads/main.tar.gz')
+    expect(url).toBe('https://github.com/hotwired/stimulus.git')
   })
 
-  it('should return correct docs path', () => {
-    const path = stimulusAdapter.getDocsPath('/tmp/stimulus-site-main')
-    expect(path).toBe('/tmp/stimulus-site-main/_source')
+  it('should return docs path as the output dir', () => {
+    const path = stimulusAdapter.getDocsPath('/tmp/.stimulus-docs')
+    expect(path).toBe('/tmp/.stimulus-docs')
   })
 
   it('should return correct output directory', () => {
