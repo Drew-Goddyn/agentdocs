@@ -13,6 +13,7 @@ import { promptConfirm } from './core/prompts.js'
 import { railsAdapter } from './sources/rails.js'
 import { turboAdapter } from './sources/turbo.js'
 import { stimulusAdapter } from './sources/stimulus.js'
+import { alpineAdapter, isSubstantialMarkdown } from './sources/alpine.js'
 
 export interface RunnerOptions {
   version?: string
@@ -163,6 +164,18 @@ const stimulusCloneConfig: SparseCloneConfig = {
   errorContext: 'Stimulus docs',
 }
 
+const alpineCloneConfig: SparseCloneConfig = {
+  repoUrl: 'https://github.com/alpinejs/alpine.git',
+  sparseFolder: 'packages/docs/src/en',
+  errorContext: 'Alpine.js docs',
+  fileFilter: (src) => {
+    if (fs.statSync(src).isDirectory()) return true
+    if (!src.endsWith('.md')) return false
+    const content = fs.readFileSync(src, 'utf-8')
+    return isSubstantialMarkdown(content)
+  },
+}
+
 async function cloneWithConfig(config: SparseCloneConfig, destDir: string): Promise<void> {
   await sparseClone({
     repoUrl: config.repoUrl,
@@ -287,6 +300,10 @@ export function runTurboDocs(options: RunnerOptions): Promise<void> {
 
 export function runStimulusDocs(options: RunnerOptions): Promise<void> {
   return runSparseCheckoutDocs(stimulusAdapter, stimulusCloneConfig, options)
+}
+
+export function runAlpineDocs(options: RunnerOptions): Promise<void> {
+  return runSparseCheckoutDocs(alpineAdapter, alpineCloneConfig, options)
 }
 
 async function downloadAndExtractGeneric(

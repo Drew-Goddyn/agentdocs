@@ -9,6 +9,7 @@ export { promptVersion, promptConfirm, promptOutputFile } from './core/prompts.j
 export { railsAdapter } from './sources/rails.js'
 export { turboAdapter } from './sources/turbo.js'
 export { stimulusAdapter } from './sources/stimulus.js'
+export { alpineAdapter } from './sources/alpine.js'
 export { categorizeByDirectory } from './sources/shared.js'
 export { runSource } from './runner.js'
 export type { RunnerOptions } from './runner.js'

@@ -3,7 +3,7 @@ import { Command } from 'commander'
 import pc from 'picocolors'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
-import { runRailsGuides, runTurboDocs, runStimulusDocs } from './runner.js'
+import { runRailsGuides, runTurboDocs, runStimulusDocs, runAlpineDocs } from './runner.js'
 import { parseRailsVersion, findGemfileLock } from './version-detector.js'
 import { promptVersion } from './core/prompts.js'
 import { BadInputError, FetchError } from './errors.js'
@@ -100,6 +100,24 @@ program
   .action(async (opts) => {
     try {
       await runStimulusDocs({
+        output: opts.output,
+        yes: opts.yes,
+        force: opts.force,
+      })
+    } catch (error) {
+      handleError(error)
+    }
+  })
+
+program
+  .command('alpine')
+  .description('Fetch Alpine.js documentation via sparse-checkout')
+  .option('-o, --output <file>', 'Output file (default: auto-detect CLAUDE.md or AGENTS.md)')
+  .option('-y, --yes', 'Skip confirmation prompts')
+  .option('-f, --force', 'Force re-download even if cached')
+  .action(async (opts) => {
+    try {
+      await runAlpineDocs({
         output: opts.output,
         yes: opts.yes,
         force: opts.force,
